@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./deploy/Dockerfile
+      target: prod
+    image: neo:${NEO_VERSION:-latest}
+    restart: always
+    env_file:
+    - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NEO_HOST: 0.0.0.0
+      NEO_DB_HOST: neo-db
+      NEO_DB_PORT: 5432
+      NEO_DB_USER: neo
+      NEO_DB_PASS: neo
+      NEO_DB_BASE: neo
+
+  db:
+    image: postgres:13.8-bullseye
+    hostname: neo-db
+    environment:
+      POSTGRES_PASSWORD: "neo"
+      POSTGRES_USER: "neo"
+      POSTGRES_DB: "neo"
+    volumes:
+    - neo-db-data:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: pg_isready -U neo
+      interval: 2s
+      timeout: 3s
+      retries: 40
+
+
+
+volumes:
+  neo-db-data:
+    name: neo-db-data
